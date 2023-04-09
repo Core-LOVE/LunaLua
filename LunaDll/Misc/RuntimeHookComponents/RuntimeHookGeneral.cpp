@@ -368,6 +368,41 @@ static void ProcessPasteKeystroke()
     }
 }
 
+void RenderNPCDisable()
+{
+	// Replaces ending loop points to 0, thus preventing rendering
+	
+	static const unsigned int addresses[] = {
+		0x009095EF, 0x0091274F, 0x0091E1F9, 0x00920047, 0x00922D07, 0x00927F28,
+		0x00929F88, 0x0092C905, 0x0092EC30, 0x0093BE67,
+	}
+	
+	static const unsigned uint8_t values[][] = {
+		{0x66, 0xBA, 0x00, 0x00, 0x90, 0x90, 0x90},
+		{0x66, 0xB8, 0x00, 0x00, 0x90, 0x90, 0x90},
+		{0x66, 0xB9, 0x00, 0x00, 0x90, 0x90, 0x90},
+		
+		{0x66, 0xBA, 0x00, 0x00, 0x90, 0x90, 0x90},
+		
+		{0x66, 0xBA, 0x00, 0x00, 0x90, 0x90, 0x90},
+		{0x66, 0xBA, 0x00, 0x00, 0x90, 0x90, 0x90},
+		{0x66, 0xBA, 0x00, 0x00, 0x90, 0x90, 0x90},
+		{0x66, 0xB8, 0x00, 0x00, 0x90, 0x90, 0x90},
+		{0x66, 0xB9, 0x00, 0x00, 0x90, 0x90, 0x90},
+		{0x66, 0xB8, 0x00, 0x00, 0x90, 0x90, 0x90},
+	}
+	
+	for (unsigned int addrIndex = 0; addrIndex < sizeof(addresses); addrIndex++) 
+	{
+		for (unsigned int i = 0; i < sizeof(values[addrIndex]); i++) 
+		{
+			unsigned uint8_t valArray[] = values[i];
+			
+			PATCH(addresses[addrIndex] + i).bytes(valArray[0], valArray[1], valArray[2], valArray[3], valArray[4], valArray[5], valArray[6]).Apply();
+		}
+	}
+}
+
 static void ProcessRawKeyPress(uint32_t virtKey, uint32_t scanCode, bool repeated)
 {
     static WCHAR unicodeData[32] = { 0 };
@@ -1202,6 +1237,9 @@ static unsigned int __stdcall LatePatch(void)
     // Init controller support
     gLunaGameControllerManager.init();
 
+	// Disable 1.3 rendering of npcs
+	RenderNPCDisable();
+	
     /* Do what the place we patched this in is supposed to do: */
     /* 008BEC61 | mov eax,dword ptr ds:[B2D788] */
     return *((unsigned int*)(0xB2D788));
